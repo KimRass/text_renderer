@@ -8,9 +8,9 @@
 #        -rmask demos/eiffel_mask.jpg -vis
 
 import numpy as np
-import cv2
 import argparse
 from numba import jit
+import cv2
 from scipy import ndimage as ndi
 
 SEAM_COLOR = np.array([255, 200, 200])    # seam visualization color (BGR)
