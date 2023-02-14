@@ -294,9 +294,10 @@ if __name__ == "__main__":
 
         width, height = _get_width_and_height(img)
         dy = 0
-        dx = int(width * 0.1)
+        dx = int(width * 0.2)
         output = seam_carve(img=img, dy=dy, dx=dx, pmask=pmask, vis=False)
         output = output.astype("uint8")
         save_image(
             img1=output, path=f"/Users/jongbeomkim/Documents/image_inpainting/req2/seam_carving/{path.name}"
         )
+2375 / 3
