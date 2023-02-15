@@ -124,7 +124,7 @@ def _carve_single_seam_grayscale(img, mask):
 
 
 @jit
-def _get_seam_with_lowest_energy(img, pmask=None, rmask=None, mask_thresh=10, weight=100_000):
+def _get_seam_with_lowest_energy(img, pmask=None, rmask=None, mask_thresh=10, weight=10_000_000):
     width, height = _get_width_and_height(img)
     # Minimum energy value seen upto that pixel.
 
