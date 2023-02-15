@@ -13,7 +13,7 @@
 ## Related Works
 - *Top down methods use tools such as face detectors to detect important regions in the image, whereas bottom-up methods rely on visual saliency methods to construct a visual saliency map of the image. Once the saliency map is constructed, cropping can be used to display the most important region of the image.*
 ## Methology
-- Intuitively, our goal is to remove unnoticeable pixels that blend with their surroundings.
+- *Intuitively, our goal is to remove unnoticeable pixels that blend with their surroundings.*
 
 # Paper Summary
 - [Improved Seam Carving for Video Retargeting](http://www.eng.tau.ac.il/~avidan/papers/vidret.pdf)
