@@ -175,7 +175,7 @@ def _carve_seams(img, dx, mask=None, vis=False, rotate=False):
     return img, mask
 
 
-def _insert_seams(img, dx, pmask=None, rmask=None, vis=False, rotate=False):
+def _insert_seams(img, dx, pmask=None, rmask=None, visualize=False, rotate=False):
     copied_img = img.copy()
     copied_pmask = pmask.copy() if pmask is not None else None
     copied_rmask = rmask.copy() if rmask is not None else None
@@ -183,7 +183,7 @@ def _insert_seams(img, dx, pmask=None, rmask=None, vis=False, rotate=False):
     seams_record = list()
     for _ in range(dx):
         seam_idx, mask = _get_seam_with_lowest_energy(img=copied_img, pmask=copied_pmask)
-        if vis:
+        if visualize:
             visualize(img=copied_img, mask=mask, rotate=rotate)
         seams_record.append(seam_idx)
 
@@ -195,25 +195,31 @@ def _insert_seams(img, dx, pmask=None, rmask=None, vis=False, rotate=False):
     for _ in range(dx):
         seam = seams_record.pop()
         img = add_seam(img, seam)
-        if vis:
+        if visualize:
             visualize(img, rotate=rotate)
         if pmask is not None:
             pmask = add_seam_grayscale(pmask, seam)
 
         # Update the remaining seam indices
+        # print(seam.shape)
+        # print(remaining_seam.shape)
         for remaining_seam in seams_record:
-            remaining_seam[np.where(remaining_seam >= seam)] += 2
+            # remaining_seam[np.where(remaining_seam >= seam)] += 2
+            remaining_seam[remaining_seam >= seam] += 2
     return img, pmask
 
 
 def cast_from_uin8_to_float(mask):
-    new_mask = mask.copy()
-    new_mask = new_mask.astype("float")
-    new_mask /= new_mask.max()
+    if mask is not None:
+        new_mask = mask.copy()
+        new_mask = new_mask.astype("float")
+        new_mask /= new_mask.max()
+    else:
+        new_mask = None
     return new_mask
 
 
-def perform_seam_carving(img, dx, dy, pmask=None, rmask=None, vis=False):
+def perform_seam_carving(img, dx, dy, pmask=None, rmask=None, visualize=False):
     width, height = _get_width_and_height(img)
 
     pmask = cast_from_uin8_to_float(pmask)
@@ -228,9 +234,9 @@ def perform_seam_carving(img, dx, dy, pmask=None, rmask=None, vis=False):
     # output = img
 
     if dx < 0:
-        output, pmask = _carve_seams(img=img, dx=-dx, mask=pmask, vis=vis)
+        output, pmask = _carve_seams(img=img, dx=-dx, mask=pmask, visualize=visualize)
     elif dx > 0:
-        output, pmask = _insert_seams(img=img, dx=dx, pmask=pmask, vis=vis, rotate=False)
+        output, pmask = _insert_seams(img=img, dx=dx, pmask=pmask, visualize=visualize, rotate=False)
 
     # if dy < 0:
     #     output = _rotate_image(img=output, clockwise=True)
@@ -250,20 +256,39 @@ def perform_seam_carving(img, dx, dy, pmask=None, rmask=None, vis=False):
 
 def get_rmask(img):
     # canvas = _get_canvas_same_size_as_image(_convert_to_2d(img), black=True)
+    font_color = (255, 255, 255)
     width, height = _get_width_and_height(img)
-    # with wandImage(
-    #     filename="/Users/jongbeomkim/Desktop/workspace/text_renderer/bounding_box_tuning/1119_3752_original.jpg"
-    # ) as image:
     with wandImage(width=width, height=height, background=Color("black")) as canvas:
         with Drawing() as ctx:
-            for xmin, ymin, xmax, ymax, ori_content, tr_content in bboxes.values:
+            ctx.font_family = "arial"
+            ctx.gravity = "north_west"
+            ctx.text_antialias = True
+            for xmin, ymin, xmax, ymax, ori_content, tr_content in tqdm(bboxes.iloc[25: 26].values):
                 text = tr_content
 
+                ctx.font_size = get_font_size(
+                    region_score_map=region_score_map,
+                    xmin=xmin,
+                    ymin=ymin,
+                    xmax=xmax,
+                    ymax=ymax
+                )
+                ctx.fill_color = f"rgb{font_color}"
+                ctx.stroke_color = f"rgb{tuple([255 - i for i in font_color])}"
+                ctx.stroke_opacity = 0
+                ctx.text(x=xmin, y=ymin, body=text)
+
                 textbox_width, textbox_height = _get_textbox_width_and_height(ctx=ctx, text=text)
-                canvas[ymin: ymin + textbox_height, xmin: xmin + textbox_width] = 255
-                # canvas[ymin: ymax, xmin: xmax] = 0
+                # _draw_bbox(ctx, x=xmin, y=ymin, bbox_width=textbox_width, bbox_height=textbox_height)
+                
+                # ctx.fill_color = Color("white")
+                # ctx.rectangle(left=xmin, top=ymin, width=textbox_width, height=textbox_height)
+                # ctx.fill_color = Color("black")
+                # ctx.rectangle(left=xmin, top=ymin, right=xmax, bottom=ymax)
+                ctx.draw(canvas)
         canvas = _convert_wand_image_to_array(canvas)
     show_image(canvas, img)
+    bboxes.iloc[25: 30]
 
 
 if __name__ == "__main__":
@@ -296,7 +321,13 @@ if __name__ == "__main__":
         )
 
 
-    region_mask = _convert_region_score_map_to_region_mask(
-        region_score_map=region_score_map, region_score_thresh=200
+def get_protective_mask():
+    text_stroke_mask = get_text_stroke_mask(
+        img=img, region_score_map=region_score_map, region_score_thresh=130
     )
-    pmask = region_mask[:, :, 0]
+    _, pmask = postprocess_text_stroke_mask(
+        text_stroke_mask=text_stroke_mask,
+        region_score_map=region_score_map,
+        bboxes=bboxes
+    )
+    show_image(pmask, img, 0.2)

@@ -1,5 +1,5 @@
 - Many parts of the code are adapted from [seam-carving](https://github.com/andrewdcampbell/seam-carving)
-- Reference: https://github.com/esimov/caire
+- References: https://github.com/esimov/caire, https://github.com/vivianhylee/seam-carving
 
 # Paper Summary
 - [Seam Carving for Content-Aware Image Resizing](https://perso.crans.org/frenoy/matlab2012/seamcarving.pdf)
